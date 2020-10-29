@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <title>마커 클러스터</title>
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=3lgi78evml"></script>
+    <script type="text/javascript" src="dapi.kakao.com/v2/maps/sdk.js?appkey=f611191253e57b2eef9943400b70a546&libraries=services"></script>
+    <script type="text/javascript" src="data/coviddata.js"></script>
+    <script type="text/javascript" src="src/MarkerClustering.js"></script>
+    <link rel="stylesheet" href="stylesheets/main.css" />
+    <style type="text/css">
+        html, body { width:100%;height:100%;padding:0;margin:0; }
+  
+        /* Always set the map height explicitly to define the size of the div
+         * element that contains the map. */
+        #map {
+          height: 100%;
+        }
+        /* Optional: Makes the sample page fill the window. */
+        html, body {
+          height: 100%;
+          margin: 0;
+          padding: 0;
+        }
+      
+      </style>
+</head>
+<body>
+  <div class="infobox2">
+    <span class="confirm" style="font-weight: bolder;">10월28일 기준 확진자</span>
+    <div class="content">
+      <div>24,889
+       <div class="smallfont">전일대비(+38)</div></div>
+    </div><hr>
+
+    <div class="content1 clear" style="font-size: 20px;justify-content:space-evenly;padding: 0 0px;">
+      <div>
+        <div class="recovery" style="font-size:15px;color:rgb(23, 153, 23);font-weight:bolder;">완치(격리해제)</div>
+        <div>23,030<div class="smallfont">(+26)</div></div>
+      </div><hr>
+      <div style="width: 1px; height:100%; background:black;"></div>
+      <div>
+        <div class="cure" style="font-size:15px;color:rgb(252, 152, 38);font-weight:bolder;">치료중(격리 중)</div>
+        <div>1,421<div class="smallfont">(+11)</div></div>
+      </div><hr>
+      <div>
+        <div class="death" style="font-size:15px;color:red;font-weight:bolder;">사망</div>
+        <div>438<div class="smallfont">(+1)</div></div>
+      </div>
+    </div>
+  </div>
+    <!--우측하단 방문날짜색상구분표-->
+    <div class="infobox2">
+        <span class="visit" style="font-size:12px;font-weight:bolder;">방문날짜에 따른 색상구분</span>
+        <br>
+        <hr style="border-top: 1.5px solid rgb(95, 90, 90); margin-bottom:6.5px !important;margin-top:0px !important;">
+        <div class="cir-wrap">
+          <div class="circir blue"></div>
+          <span class="under9" style="font-weight: bolder;">
+            3일 이상 7일 이하
+          </span>
+        </div>
+        <div class="cir-wrap">
+          <div class="circir green"></div>
+          <span class="under4" style="font-weight: bolder;">
+            24시간 이상 3일 미만
+          </span>
+        </div>
+        <div class="cir-wrap">
+          <div class="circir red"></div>
+          <span class="under24" style="font-weight: bolder;">
+            24시간 미만
+          </span>
+        </div>
+      </div>
+    <!--검색기능(카카오api이용) (구현x) -> jquery적용한계
+    <div class="search">
+      <input class= "search_input" placeholder="목적지를 입력해주세요">
+      <button class="search_button">검색</button>
+    </div>
+  -->
+
+
+  <div id="map" style="width:100%;height:100%;"></div>
+  <script>
+    var map = new naver.maps.Map("map", {
+        zoom: 6,
+        center: new naver.maps.LatLng(36.2253017, 127.6460516),
+        zoomControl: true,
+        zoomControlOptions: {
+            position: naver.maps.Position.TOP_LEFT,
+            style: naver.maps.ZoomControlStyle.SMALL
+        }
+    });
+
+    
+
+    var markers = [],
+        data = covidData.searchResult.covidData;
+
+    for (var i = 0, ii = data.length; i < ii; i++) {
+        var spot = data[i],
+            latlng = new naver.maps.LatLng(spot.grd_la, spot.grd_lo),
+            marker = new naver.maps.Marker({
+                position: latlng,
+                draggable: true
+            });
+
+        markers.push(marker);
+    }
+
+    var htmlMarker1 = {
+            content: '<div style="cursor:pointer;width:40px;height:40px;line-height:42px;font-size:10px;color:white;text-align:center;font-weight:bold;background:url(images/green.png);background-size:contain;"></div>',
+            size: N.Size(40, 40),
+            anchor: N.Point(20, 20)
+        },
+        htmlMarker2 = {
+            content: '<div style="cursor:pointer;width:40px;height:40px;line-height:42px;font-size:10px;color:white;text-align:center;font-weight:bold;background:url(images/red.png);background-size:contain;"></div>',
+            size: N.Size(40, 40),
+            anchor: N.Point(20, 20)
+        },
+        htmlMarker3 = {
+            content: '<div style="cursor:pointer;width:40px;height:40px;line-height:42px;font-size:10px;color:white;text-align:center;font-weight:bold;background:url(images/yellow.png);background-size:contain;"></div>',
+            size: N.Size(40, 40),
+            anchor: N.Point(20, 20)
+        };
+
+    var markerClustering = new MarkerClustering({
+        minClusterSize: 2,
+        maxZoom: 13,
+        map: map,
+        markers: markers,
+        disableClickZoom: false,
+        gridSize: 120,
+        icons: [htmlMarker1, htmlMarker2, htmlMarker3],
+        indexGenerator: [10, 100, 200, 500, 1000],
+        stylingFunction: function(clusterMarker, count) {
+            $(clusterMarker.getElement()).find('div:first-child').text(count);
+        }
+    });
+    
+</script>
+</body>
+</html>
